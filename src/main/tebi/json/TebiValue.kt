@@ -1,16 +1,19 @@
 package tebi.json
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
+import java.text.ParseException
 import kotlin.String
 
 sealed class TebiValue {
     companion object {
         fun parse(str: String) : Any? {
-            val parsed = parseTebiValue(str.trim())
-            return when(parsed.remainder) {
-                "" -> parsed.value
-                else -> throw NotImplementedException()
+            val parsed = try {
+                parseTebiValue(str.trimStart())
+            } catch (e: ParseException) {
+                throw ParseException(str, str.length - e.errorOffset)
             }
+            if (parsed.remainder.isNotBlank()) throw ParseException(str, str.indexOf(parsed.remainder))
+            return parsed.value
         }
         internal fun parseTebiValue(str: String) : TebiResult {
             return when (true) {
@@ -20,7 +23,7 @@ sealed class TebiValue {
                 TebiString.match(str) -> TebiString.parse(str)
                 TebiArray.match(str) -> TebiArray.parse(str)
                 TebiObject.match(str) -> TebiObject.parse(str)
-                else -> throw NotImplementedException()
+                else -> throw ParseException(str, str.length)
             }
         }
     }
@@ -32,15 +35,10 @@ sealed class TebiValue {
             return initialMatch.containsMatchIn(str)
         }
         internal open fun parse(str: String) : TebiResult {
-            val matchResult = regex.find(str)
-            return when (matchResult) {
-                null -> throw NotImplementedException()
-                else -> {
-                    val result = matchResult.value
-                    val remainder = str.drop(result.length)
-                    new(result, remainder)
-                }
-            }
+            val matchResult = regex.find(str) ?: throw ParseException(str, str.length)
+            val result = matchResult.value
+            val remainder = str.drop(result.length)
+            return new(result, remainder)
         }
     }
     internal data class TebiResult constructor(val value: Any?, val remainder: String)
@@ -57,19 +55,17 @@ private class TebiObject : TebiValue() {
             if (empty.containsMatchIn(toParse)) return TebiResult(map, remainder.drop(1))
             do {
                 toParse = toParse.drop(1).trimStart()
-                val nextKey = TebiString.parse(toParse)
-                if (nextKey.value !is String) throw NotImplementedException()
+                val nextKey = TebiValue.parseTebiValue(toParse)
+                if (nextKey.value !is String) throw ParseException(toParse, toParse.length)
                 toParse = nextKey.remainder.trimStart()
-                if (toParse[0] != ':') throw NotImplementedException()
+                if (toParse[0] != ':') throw ParseException(toParse, toParse.length)
                 toParse = toParse.drop(1).trimStart()
                 val nextValue = parseTebiValue(toParse)
                 map[nextKey.value] = nextValue.value
                 toParse = nextValue.remainder.trimStart()
-            } while (toParse[0] == ',')
-            return when (toParse[0] == '}') {
-                true -> TebiResult(map.toMap(), toParse.drop(1))
-                else -> throw NotImplementedException()
-            }
+            } while (toParse.startsWith(','))
+            if (!toParse.startsWith('}')) throw ParseException(toParse, toParse.length)
+            return TebiResult(map.toMap(), toParse.drop(1))
         }
         override fun parse(str: String): TebiResult {
             val matchResult = regex.find(str)
@@ -100,11 +96,9 @@ private class TebiArray : TebiValue() {
                 val nextValue = parseTebiValue(toParse)
                 list.add(nextValue.value)
                 toParse = nextValue.remainder.trimStart()
-            } while (toParse[0] in arrayOf(','))
-            return when (toParse[0] == ']') {
-                true -> TebiResult(list.toList(), toParse.drop(1))
-                else -> throw NotImplementedException()
-            }
+            } while (toParse.startsWith(','))
+            if (!toParse.startsWith(']')) throw ParseException(toParse, toParse.length)
+            return TebiResult(list.toList(), toParse.drop(1))
         }
         override fun parse(str: String): TebiResult {
             val matchResult = regex.find(str)

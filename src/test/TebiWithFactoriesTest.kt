@@ -2,49 +2,52 @@ package tebi.json
 
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
-import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import java.io.File
+import java.text.ParseException
 import kotlin.test.fail
 
 class TebiWithFactoriesTest {
+
     @TestFactory
-    fun mustFactory(): List<DynamicTest> {
+    fun must(): List<DynamicTest> {
         return dynamicTest('y') {
-            DynamicTest.dynamicTest(it.name) {
-                try {
-                    TebiValue.parse(it.readText())
-                } catch (e: NotImplementedError) {
-                    println(it.name)
-                    fail(it.name)
-                }
-            }
-        }
-    }
-
-    @TestFactory
-    fun mayFactory(): List<DynamicTest> {
-        return dynamicTest('i') {
-            DynamicTest.dynamicTest(it.name) {
-                try {
-                    TebiValue.parse(it.readText())
-                } catch (e: NotImplementedException) {
-                    println(it.name)
-                    fail(it.name)
-                }
-            }
-        }
-    }
-
-    @TestFactory
-    fun musntFactory(): List<DynamicTest> {
-        return dynamicTest('n') {
             val name = it.name
+            val text = it.readText()
             DynamicTest.dynamicTest(name) {
                 try {
-                    TebiValue.parse(it.readText())
-                    println(it.name)
-                    fail(it.name)
-                } catch (e: NotImplementedException) {
+                    TebiValue.parse(text)
+                } catch (e: ParseException) {
+                    fail(name)
+                }
+            }
+        }
+    }
+
+    @TestFactory
+    fun may(): List<DynamicTest> {
+        return dynamicTest('i') {
+            val name = it.name
+            val text = it.readText()
+            DynamicTest.dynamicTest(name) {
+                try {
+                    TebiValue.parse(text)
+                } catch (e: ParseException) {
+                    fail(name)
+                }
+            }
+        }
+    }
+
+    @TestFactory
+    fun musnt(): List<DynamicTest> {
+        return dynamicTest('n') {
+            val name = it.name
+            val text = it.readText()
+            DynamicTest.dynamicTest(name) {
+                try {
+                    TebiValue.parse(text)
+                    fail(name)
+                } catch (e: ParseException) {
                     // pass
                 }
             }
@@ -57,5 +60,4 @@ class TebiWithFactoriesTest {
             .map {
                 factory(it)
             }
-
 }
