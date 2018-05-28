@@ -27,7 +27,12 @@ class TebiWithFactoriesTest {
     fun may(): List<DynamicTest> {
         return dynamicTest('i') {
             val name = it.name
-            val text = it.readText()
+            val charset = when {
+                it.name.contains("16le", true) -> Charsets.UTF_16LE
+                it.name.contains("16be", true) -> Charsets.UTF_16BE
+                else -> Charsets.UTF_8
+            }
+            val text = it.readText(charset)
             DynamicTest.dynamicTest(name) {
                 try {
                     TebiValue.parse(text)

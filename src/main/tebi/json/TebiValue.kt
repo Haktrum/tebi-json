@@ -8,7 +8,7 @@ sealed class TebiValue {
     companion object {
         fun parse(str: String) : Any? {
             val parsed = try {
-                parseTebiValue(str.trimStart())
+                parseTebiValue(str.trimStart().trimStart('\ufeff'))
             } catch (e: ParseException) {
                 throw ParseException(str, str.length - e.errorOffset)
             }
