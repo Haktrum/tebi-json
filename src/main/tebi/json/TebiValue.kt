@@ -52,20 +52,20 @@ private class TebiObject : TebiValue() {
         override fun new(str: String, remainder: String): TebiResult {
             val map = mutableMapOf<String, Any?>()
             var toParse = (str + remainder).trimStart()
-            if (empty.containsMatchIn(toParse)) return TebiResult(map, remainder.drop(1))
+            if (empty.containsMatchIn(toParse)) return TebiResult(map as Map<String, Any?>, remainder.drop(1))
             do {
                 toParse = toParse.drop(1).trimStart()
                 val nextKey = TebiValue.parseTebiValue(toParse)
                 if (nextKey.value !is String) throw ParseException(toParse, toParse.length)
                 toParse = nextKey.remainder.trimStart()
-                if (toParse[0] != ':') throw ParseException(toParse, toParse.length)
+                if (!toParse.startsWith(':')) throw ParseException(toParse, toParse.length)
                 toParse = toParse.drop(1).trimStart()
                 val nextValue = parseTebiValue(toParse)
                 map[nextKey.value] = nextValue.value
                 toParse = nextValue.remainder.trimStart()
             } while (toParse.startsWith(','))
             if (!toParse.startsWith('}')) throw ParseException(toParse, toParse.length)
-            return TebiResult(map.toMap(), toParse.drop(1))
+            return TebiResult(map as Map<String, Any?>, toParse.drop(1))
         }
         override fun parse(str: String): TebiResult {
             val matchResult = regex.find(str)
@@ -90,7 +90,7 @@ private class TebiArray : TebiValue() {
         override fun new(str: String, remainder: String): TebiResult {
             val list = mutableListOf<Any?>()
             var toParse = (str + remainder).trimStart()
-            if (empty.containsMatchIn(toParse)) return TebiResult(list, remainder.drop(1))
+            if (empty.containsMatchIn(toParse)) return TebiResult(list as List<Any?>, remainder.drop(1))
             do {
                 toParse = toParse.drop(1).trimStart()
                 val nextValue = parseTebiValue(toParse)
@@ -98,7 +98,7 @@ private class TebiArray : TebiValue() {
                 toParse = nextValue.remainder.trimStart()
             } while (toParse.startsWith(','))
             if (!toParse.startsWith(']')) throw ParseException(toParse, toParse.length)
-            return TebiResult(list.toList(), toParse.drop(1))
+            return TebiResult(list as List<Any?>, toParse.drop(1))
         }
         override fun parse(str: String): TebiResult {
             val matchResult = regex.find(str)
