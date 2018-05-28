@@ -141,11 +141,7 @@ private class TebiBoolean : TebiValue() {
         override val regex = Regex("^(true|false)")
         override val initialMatch = Regex("^[tf]")
         override fun new(str: String, remainder: String): TebiResult {
-            val value = when(true) {
-                "true" == str -> true
-                "false" == str -> false
-                else -> throw NotImplementedException()
-            }
+            val value = "true" == str
             return TebiResult(value, remainder)
         }
     }
